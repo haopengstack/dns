@@ -29,7 +29,7 @@ func (rr *SIG) Sign(k crypto.Signer, m *Msg) ([]byte, error) {
 	rr.TypeCovered = 0
 	rr.Labels = 0
 
-	buf := make([]byte, m.Len()+rr.len())
+	buf := make([]byte, m.Len()+Len(rr))
 	mbuf, err := m.PackBuffer(buf)
 	if err != nil {
 		return nil, err
@@ -60,16 +60,15 @@ func (rr *SIG) Sign(k crypto.Signer, m *Msg) ([]byte, error) {
 	}
 
 	rr.Signature = toBase64(signature)
-	sig := string(signature)
 
-	buf = append(buf, sig...)
+	buf = append(buf, signature...)
 	if len(buf) > int(^uint16(0)) {
 		return nil, ErrBuf
 	}
 	// Adjust sig data length
 	rdoff := len(mbuf) + 1 + 2 + 2 + 4
 	rdlen := binary.BigEndian.Uint16(buf[rdoff:])
-	rdlen += uint16(len(sig))
+	rdlen += uint16(len(signature))
 	binary.BigEndian.PutUint16(buf[rdoff:], rdlen)
 	// Adjust additional count
 	adc := binary.BigEndian.Uint16(buf[10:])
@@ -128,8 +127,7 @@ func (rr *SIG) Verify(k *KEY, buf []byte) error {
 		if offset+1 >= buflen {
 			continue
 		}
-		var rdlen uint16
-		rdlen = binary.BigEndian.Uint16(buf[offset:])
+		rdlen := binary.BigEndian.Uint16(buf[offset:])
 		offset += 2
 		offset += int(rdlen)
 	}
@@ -169,7 +167,7 @@ func (rr *SIG) Verify(k *KEY, buf []byte) error {
 	}
 	// If key has come from the DNS name compression might
 	// have mangled the case of the name
-	if strings.ToLower(signername) != strings.ToLower(k.Header().Name) {
+	if !strings.EqualFold(signername, k.Header().Name) {
 		return &Error{err: "signer name doesn't match key name"}
 	}
 	sigend := offset

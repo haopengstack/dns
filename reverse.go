@@ -6,11 +6,16 @@ var StringToType = reverseInt16(TypeToString)
 // StringToClass is the reverse of ClassToString, needed for string parsing.
 var StringToClass = reverseInt16(ClassToString)
 
-// Map of opcodes strings.
+// StringToOpcode is a map of opcodes to strings.
 var StringToOpcode = reverseInt(OpcodeToString)
 
-// Map of rcodes strings.
+// StringToRcode is a map of rcodes to strings.
 var StringToRcode = reverseInt(RcodeToString)
+
+func init() {
+	// Preserve previous NOTIMP typo, see github.com/miekg/dns/issues/733.
+	StringToRcode["NOTIMPL"] = RcodeNotImplemented
+}
 
 // Reverse a map
 func reverseInt8(m map[uint8]string) map[string]uint8 {
